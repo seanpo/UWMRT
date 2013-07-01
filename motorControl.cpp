@@ -39,9 +39,14 @@ void MotorControl::_init(int extendPinA, int extendPinB, int contractPinA, int c
   pinMode(encoderPin, INPUT);
   
   _state = STOP;
-  _edgeCount = 0;
+  _edgeCount = MAX_EDGE_COUNT;
   _prevEncoderVal = 0;
   _noChangeCount = 0;
+
+  // Make motor completely contracted, while initializing edgeCount to 0.
+  while(contract()) {
+    _edgeCount--;
+  }
 }
 
 void MotorControl::updateEncoder() {

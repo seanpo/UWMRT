@@ -3,7 +3,7 @@
 
 #include "Arduino.h"
 
-#define MAX_EDGE_COUNT 999999 // TODO: Update this number.
+#define MAX_EDGE_COUNT 10000 // TODO: Update this number.
 #define AVG_ENCODER_VAL 315
 #define MAX_NO_CHANGE_COUNT 3
 
