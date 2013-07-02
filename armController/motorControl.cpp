@@ -7,12 +7,13 @@
   NOTE: This assumes that the starting position is fully contracted.
 *********************************************************************/
 #include "Arduino.h"
+#include "motorControl.h"
 
 /******************************************************************** 
   Use this constructor when the encoder information is irrellevant
 *********************************************************************/
-MotorControl::MotorControl(int extendPinA, int extendPinB, int contractPinA, int contractPinB) {
-  _init(extendPinA, extendPinB, contractPinA, contractPinB, -1);
+MotorControl::MotorControl(int extendPinA, int extendPinB, int contractPinA, int contractPinB, int maxEdgeCount) {
+  _init(extendPinA, extendPinB, contractPinA, contractPinB, maxEdgeCount, -1);
   _useEncoder = false;
 }
 
@@ -20,16 +21,18 @@ MotorControl::MotorControl(int extendPinA, int extendPinB, int contractPinA, int
   Use this constructor when the encoder information is important
   The motor will stop moving when it is out of bounds.
 *********************************************************************/
-MotorControl::MotorControl(int extendPinA, int extendPinB, int contractPinA, int contractPinB, int encoderPin) {
-  _init(extendPinA, extendPinB, contractPinA, contractPinB, encoderPin);
+MotorControl::MotorControl(int extendPinA, int extendPinB, int contractPinA, int contractPinB, int maxEdgeCount, int encoderPin) {
+  _init(extendPinA, extendPinB, contractPinA, contractPinB, maxEdgeCount, encoderPin);
   _useEncoder = true;
 }
 
-void MotorControl::_init(int extendPinA, int extendPinB, int contractPinA, int contractPinB, int encoderPin) {
+void MotorControl::_init(int extendPinA, int extendPinB, int contractPinA, int contractPinB, int maxEdgeCount, int encoderPin) {
+  
   _extendPinA = extendPinA;
   _extendPinB = extendPinB;
   _contractPinA = contractPinA;
   _contractPinB = contractPinB;
+  _maxEdgeCount = maxEdgeCount;
   _encoderPin = encoderPin;
   
   pinMode(extendPinA, OUTPUT);
@@ -43,12 +46,15 @@ void MotorControl::_init(int extendPinA, int extendPinB, int contractPinA, int c
   _prevEncoderVal = 0;
   _noChangeCount = 0;
 
+  
   // Make motor completely contracted. 16000 is chosen for the delay because
   // at .5 in per second, it will take 16 seconds to contract the potential full 
   // 8 inches.
-  _contract();
-  delay(16000);
-  stop();
+  if (_useEncoder) {
+    _contract();
+    delay(16000);
+    stop();
+  }
 }
 
 void MotorControl::updateEncoder() {
@@ -59,7 +65,7 @@ void MotorControl::updateEncoder() {
     // or if no changes have been detected in MAX_NO_CHANGE_COUNT number of
     // reads.
     if (encoderVal != _prevEncoderVal || _noChangeCount >= MAX_NO_CHANGE_COUNT) {
-      if (_state == EXTEND && _edgeCount < MAX_EDGE_COUNT) {
+      if (_state == EXTEND && _edgeCount < _maxEdgeCount) {
         _edgeCount++;
       } else if (_state == CONTRACT && _edgeCount > 0) {
         _edgeCount--;
@@ -80,7 +86,7 @@ void MotorControl::stop() {
 }
 
 bool MotorControl::extend() {
-  if (!useEncoder || _edgeCount < MAX_EDGE_COUNT) {
+  if (!_useEncoder || _edgeCount < _maxEdgeCount) {
     _extend();
     return true;
   }
@@ -88,7 +94,7 @@ bool MotorControl::extend() {
 }
 
 bool MotorControl::contract() {
-  if (!useEncoder || _edgeCount > 0) {
+  if (!_useEncoder || _edgeCount > 0) {
     _contract();
     return true;
   }
