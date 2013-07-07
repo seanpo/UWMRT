@@ -1,13 +1,17 @@
+#include "PID.h"
+#include "Arduino.h"
 
-
-PID::PID(int KP, int KI, int KD) {
-  _goal = 0;
-  _KP = KP;
-  _KI = KI;
-  _KD = KD;
+PID::PID(int KP, int KI, int KD, int MAX, int MIN) {
+  init();
+  _KP = KP/100.0;
+  _KI = KI/100.0;
+  _KD = KD/100.0;
+  _MAX = MAX;
+  _MIN = MIN;
 } 
 
-PID::init() {
+void PID::init() {
+   _goal = 0;
   _proportional = 0;
   _integral = 0;
   _derivative = 0;
@@ -16,14 +20,12 @@ PID::init() {
 }
 
 void PID::setGoal(int goal) {
+  init();
   _goal = goal;
-  _proportional = 0;
-  _integral = 0;
-  _derivative = 0;
 }
 
 int PID::run(int value) {
-  int error = value - _goal;
+  int error = _goal - value;
   
   _proportional = error;
   _integral += error;
@@ -31,6 +33,22 @@ int PID::run(int value) {
 
   _oldValue = value;
   _oldError = error;  
+  
+  float response = _KP*error + _KI*_integral + _KD*_derivative;
+  if (response < _MAX && response > _MIN) {
+    return response;
+  } else if (response > _MAX) {
+    return _MAX;
+  } else {
+    return _MIN;
+  }
+}
 
-  return _KP*error + _KI*_integral + _KD*_derivative
+void PID::print() {
+  Serial.print("proportional: ");
+  Serial.print(_proportional);
+  Serial.print(", integral: ");
+  Serial.print(_integral);
+  Serial.print(", derivative: ");
+  Serial.println(_derivative);
 }
