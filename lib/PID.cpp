@@ -28,20 +28,14 @@ int PID::run(int value) {
   int error = _goal - value;
   
   _proportional = error;
-  _integral += error;
+  _integral = _integral + error;
   _derivative = _oldError - error;
 
   _oldValue = value;
   _oldError = error;  
   
   float response = _KP*error + _KI*_integral + _KD*_derivative;
-  if (response < _MAX && response > _MIN) {
-    return response;
-  } else if (response > _MAX) {
-    return _MAX;
-  } else {
-    return _MIN;
-  }
+  return max(min(response, _MAX),_MIN);
 }
 
 void PID::print() {

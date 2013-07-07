@@ -1,4 +1,5 @@
 #include "Arduino.h"
+#include "PID.h"
 #include <WProgram.h>
 #include <Wire.h>
 #include <SoftwareServo.h>
@@ -53,67 +54,9 @@ unsigned char encPrev_array[NUM_ENC];*/
 #define Kd_dv                   0.0
 #define Ki_dv                   0.5
 
-class PID {
-  private:
-  public:
-    bool en;
-    double Kp, Ki, Kd;
-    double OUT_MAX, INT_MAX, DEAD_BAND;
-    double e, e_old, de, ie;
-    double sp, cv, out;
-
-    PID (double _Kp, double _Ki, double _Kd) {
-      Kp        = _Kp;
-      Ki        = _Ki;
-      Kd        = _Kd;
-      OUT_MAX   =  999;
-      INT_MAX   =  100;
-      DEAD_BAND =  0;
-    }
-    
-    void compute () {
-      if (en) {
-        e     = sp - cv;
-        de    = (e - e_old) / Tp;
-        ie    = max(-INT_MAX, min(ie + Ki * e * Tp, INT_MAX));
-        out   = max(-OUT_MAX, min(Kp*e + Kd*de + ie, OUT_MAX));
-        if (abs(e) <= DEAD_BAND)  out = 0;
-      } else {
-        out = 0;
-      }
-      e_old = e;
-    }
-
-};
-
-
-
-
-PID                       dv01(Kp_dv, Ki_dv, Kd_dv);
-
-
-
-
-
-
-
-
-
-
-
-
-
 long int encTick_array[NUM_ENC];
 int led = 13;
 MegaEncoderCounter megaEncoderCounter(4);  // Initialize with 1x mode
-
-// The PID is based from http://brettbeauregard.com/blog/2011/04/improving-the-beginners-pid-introduction/
-double pidSet, pidCmd, pidOut, lastpidOut;
-double cmdMax = 1, cmdMin = 0;  // of 2ms
-double pidPro, pidInt, pidDif;
-double kp = 1, ki = 1, kd = 1;
-bool pidMode = false;
-double pidSet_user = 0;
 
 // The encoder logic is a look-up table deried from http://letsmakerobots.com/node/24031
 int QEM [16] = {0,-1,1,2,1,0,2,-1,-1,2,0,1,2,1,-1,0};       // Quadrature Encoder Matrix
@@ -121,38 +64,6 @@ int QEM_index = 0;
 
 SoftwareServo motors[NUM_MTR];
 
-void SetPIDMode(int Mode){
-  if (Mode == PID_ON) {
-    lastpidOut = pidOut;
-    pidInt = pidCmd;
-    if(pidInt > cmdMax) pidInt = cmdMax;     
-    else if (pidInt < cmdMin) pidInt = cmdMin;
-    pidMode = PID_ON;
-  } else pidMode = PID_OFF;
-  return;
-}
-
-void RunPID (long int sensor, double set_point){
-    pidOut = sensor/TRUE_PPR;
-    pidSet = set_point;
-    
-    if (pidMode){
-      pidPro = pidSet - pidOut;               
-      pidInt += (ki*pidPro);
-      if(pidInt > cmdMax) pidInt = cmdMax;       
-      else if (pidInt < cmdMin) pidInt = cmdMin;
-      pidDif = (pidOut - lastpidOut);
-      
-      pidCmd = kp * pidPro + pidInt - kd * pidDif;
-      if(pidCmd > cmdMax) pidCmd = cmdMax;
-      else if(pidCmd < cmdMin) pidCmd = cmdMin;
-   
-      lastpidOut = pidOut;
-    } else {
-      pidCmd = pidSet; 
-    }
-  
-}
 
 void setup() {       
 

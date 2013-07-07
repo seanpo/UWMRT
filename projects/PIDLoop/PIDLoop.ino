@@ -1,10 +1,10 @@
 #include "PID.h"
 #include <cstdlib>
 #define KP 80
-#define KI 40
+#define KI 20
 #define KD 40
-#define MAX 200
-#define MIN -200
+#define MAX 1000
+#define MIN -1000
 
 PID *pid;
 int incomingByte;
