@@ -27,7 +27,6 @@ MotorControl::MotorControl(int extendPinA, int extendPinB, int contractPinA, int
 }
 
 void MotorControl::_init(int extendPinA, int extendPinB, int contractPinA, int contractPinB, int maxEdgeCount, int encoderPin) {
-  
   _extendPinA = extendPinA;
   _extendPinB = extendPinB;
   _contractPinA = contractPinA;

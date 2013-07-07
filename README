@@ -1,3 +1,6 @@
 UWMRT is a repository that contains all the code that the UWMRT uses. In order for any of the projects to be useful, you must first set up the "lib" folder for use. In order to do so in the Arduino IDE, you must go to Sketch -> Import Library -> Add Library, and select the "lib" folder.
 
+It has been noticed that whenever you import a library, the .cpp and .h files gets copied into a separate location. If you want to then make changes to your library, then the changes will not be applied. The best solution is to make a symlink called libraries in your Arduino folder.
+
 If you want to start a new project make sure to start it within the "project" dir. If you want to create a new library, start it within the "lib" dir.
+
