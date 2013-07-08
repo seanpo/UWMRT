@@ -2,19 +2,18 @@
 #include "PID.h"
 
 #include <cstdlib>
-#define KP 80
-#define KI 20
-#define KD 40
-#define MAX 1000
-#define MIN -1000
+#define KP .8
+#define KI .1
+#define KD .1
+#define WORKING_BAND 3000
 
 PID *pid;
 int incomingByte;
 int distance = 0;
 
 void setup() {
-  pid = new PID(KP,KI,KD,MAX,MIN); 
-  Serial.begin(9600);
+  pid = new PID(KP,KI,KD,WORKING_BAND); 
+  Serial.begin(115200);
   setGoal();
 }
 

@@ -9,7 +9,6 @@
 #include <MegaEncoderCounter.h>
 #include <digitalWriteFast.h>
 
-#define PWM_PERCENT 25.5
 #define TRUE_PPR 25344.0    // 48PPR * 132 Gear Ratio * 4 Quadature
 
 #define PID_OFF 0
@@ -21,25 +20,62 @@
 #define MAX_PULSE 2000
 #define MIN_PULSE 1000
 
-#define MAX 1000
-#define MIN 0
+#define PID_WORKING_BAND 3000
 
 MegaEncoderCounter megaEncoderCounter(4);  // Initialize with 1x mode
 
-// The encoder logic is a look-up table deried from http://letsmakerobots.com/node/24031
-int QEM [16] = {0,-1,1,2,1,0,2,-1,-1,2,0,1,2,1,-1,0};       // Quadrature Encoder Matrix
-int QEM_index = 0;
-long int encTick_array[NUM_ENC];
+long int encTick;
 int led = 13;
 
 SoftwareServo motors[NUM_MTR];
 
 PID *pid;
 int KP = 80;
-int KI = 10;
-int KD = 0;
+int KI = 0;
+int KD = 10;
 int goal = 0;
-int pidCmd = 0;
+int pidCmd = 90;
+
+void printStats();
+void setup();
+
+ISR(TIMER3_COMPA_vect){
+    encTick = megaEncoderCounter.XAxisGetCount();  // have to change library later
+    pidCmd = map(pid->run(-1*encTick), 4*(-1*PID_WORKING_BAND), 4*(PID_WORKING_BAND), 0, 180);
+    motors[0].write(pidCmd);
+    SoftwareServo::refresh();
+}  
+
+// the loop routine runs over and over again forever:
+void loop() {
+    if ( Serial.available()) {
+      char ch = Serial.read();
+      delay(3);
+      switch(ch) {
+        case '1':
+          KP = serialReadInt();
+          KI = serialReadInt();
+          KD = serialReadInt();
+          pid->setConstants(KP, KI, KD);
+          break;
+        case '2':
+          goal = serialReadInt();
+          pid->setGoal(goal);
+          break;        
+        case '3':
+          pidCmd = serialReadInt();
+          break;
+      }
+    }
+}
+
+void printStats() {
+  pid->print();
+  Serial.print("Ticks: ");
+  Serial.print(encTick);
+  Serial.print(" Rev: ");
+  Serial.println(pidCmd);
+}
 
 void setup() {       
   // Interrupts
@@ -65,40 +101,7 @@ void setup() {
   pinMode(led, OUTPUT);   
   
   // PID
-  pid = new PID(KP,  KI,  KD,  MAX,  MIN);
+  pid = new PID(KP, KI, KD, PID_WORKING_BAND);
 }
 
-ISR(TIMER3_COMPA_vect){
-  for (int i=0; i<1; i++){
-    encTick_array[i] = megaEncoderCounter.XAxisGetCount();  // have to change library later
-    pidCmd = pid->run(encTick_array[i]);
-    motors[i].write(pidCmd + MIN_PULSE);
-    SoftwareServo::refresh();
-  }    
-}
 
-// the loop routine runs over and over again forever:
-void loop() {
-    if ( Serial.available()) {
-      char ch = Serial.read();
-      switch(ch) {
-        case '1':
-          KP = serialReadInt();
-          KI = serialReadInt();
-          KD = serialReadInt();
-          pid->setConstants(KP, KI, KD);
-          break;
-        case '2':
-          goal = serialReadInt();
-          pid->setGoal(goal);
-          break;
-      }
-    }
-
-  Serial.print("Ticks: ");
-  Serial.print(encTick_array[0]);
-  Serial.print(" Rev: ");
-  Serial.println(pidCmd);
-  Serial.print(" ");
-  Serial.println(encTick_array[0]/TRUE_PPR);
-}

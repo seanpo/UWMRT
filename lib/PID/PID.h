@@ -3,7 +3,7 @@
 
 class PID {
   public:
-    PID(int KP, int KI, int KD, int MAX, int MIN);
+    PID(int KP, int KI, int KD, int WORKING_BAND);
 	
     void print();
     void setConstants(int KP, int KI, int KD);
@@ -14,14 +14,12 @@ class PID {
     void init();
 	
     int _goal;
-    int _proportional;
-    int _integral;
-    int _derivative;
-    int _oldValue;
     int _oldError;
-    int _MAX;
-    int _MIN;
+    int _WORKING_BAND;
 	
+    double _proportional;
+    double _integral;
+    double _derivative;
     float _KP;
     float _KI;
     float _KD;

@@ -1,9 +1,8 @@
 #include "PID.h"
 #include "Arduino.h"
 
-PID::PID(int KP, int KI, int KD, int MAX, int MIN) {  
-  _MAX = MAX;
-  _MIN = MIN;
+PID::PID(int KP, int KI, int KD, int WORKING_BAND) {  
+  _WORKING_BAND = WORKING_BAND;
   init();
   setConstants(KP, KI, KD);
 } 
@@ -31,15 +30,12 @@ void PID::setGoal(int goal) {
 int PID::run(int value) {
   int error = _goal - value;
   
-  _proportional = error;
-  _integral = _integral + error;
-  _derivative = error - _oldError;
-
-  _oldValue = value;
-  _oldError = error;  
+  _proportional = _KP*error;
+  _integral = _integral + _KI*error;
+  _derivative = _KD*(error - _oldError);
   
-  float response = _KP*error + _KI*_integral + _KD*_derivative;
-  return max(min(response, _MAX),_MIN);
+  _oldError = error;  
+  return max(min(error + _integral + _derivative, _WORKING_BAND),-1*_WORKING_BAND);
 }
 
 void PID::init() {
@@ -47,6 +43,5 @@ void PID::init() {
   _proportional = 0;
   _integral = 0;
   _derivative = 0;
-  _oldValue = 0;
   _oldError = 0;
 }
